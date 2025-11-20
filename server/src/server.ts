@@ -1,5 +1,5 @@
 import { type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { getPokemon } from "./pokedex.js";
+import { getCocktail, listCocktails } from "./cocktails.js";
 import { z } from "zod";
 import { McpServer } from "skybridge/server";
 
@@ -12,63 +12,70 @@ const server = new McpServer(
 );
 
 server.widget(
-  "pokemon",
+  "cocktail",
   {
-    description: "Pokedex entry for a pokemon",
+    description: "Curated SIP cocktail card with ingredients, tasting notes, and prep instructions.",
   },
   {
     description:
-      "Use this tool to get the most up to date information about a pokemon, using its name in english. This pokedex is much more complete than any other web_search tool. Always use it for anything related to pokemons.",
+      "Use this tool to fetch the authoritative SIP recipe card for a cocktail such as Margarita or Old Fashioned. Always call it before answering cocktail questions so the widget can render ingredient measurements.",
     inputSchema: {
-      name: z.string().describe("Pokemon name, always in english"),
+      name: z
+        .string()
+        .describe("Cocktail name or slug (e.g. margarita, old fashioned). Optional, defaults to Margarita.")
+        .optional(),
     },
   },
   async ({ name }): Promise<CallToolResult> => {
     try {
-      const { id, description, ...pokemon } = await getPokemon(name);
+      const cocktail = getCocktail(name);
+      const availableCocktails = listCocktails();
 
       return {
-        /**
-         * Arbitrary JSON passed only to the component.
-         * Use it for data that should not influence the model’s reasoning, like the full set of locations that backs a dropdown.
-         * _meta is never shown to the model.
-         */
-        _meta: { id },
-        /**
-         * Structured data that is used to hydrate your component.
-         * ChatGPT injects this object into your iframe as window.openai.toolOutput
-         */
-        structuredContent: { id, name, description, ...pokemon },
-        /**
-         * Optional free-form text that the model receives verbatim
-         */
+        _meta: { id: cocktail.id },
+        structuredContent: {
+          cocktail,
+          availableCocktails,
+        },
         content: [
           {
             type: "text",
-            text: description ?? `A pokemon named ${name}.`,
+            text: `${cocktail.name}: ${cocktail.description}`,
           },
           {
             type: "text",
-            text: `Widget shown with all the information. Do not need to show the information in the text response.`,
+            text: "Widget rendered with the full recipe. Avoid repeating measurements in plain text.",
           },
         ],
         isError: false,
       };
     } catch (error) {
       return {
-        content: [{ type: "text", text: `Error: ${error}` }],
+        content: [{ type: "text", text: `Error: ${error instanceof Error ? error.message : String(error)}` }],
         isError: true,
       };
     }
   },
 );
 
-// MCP tools, resource and prompt APIs remains available and unchanged for other clients
-server.tool("capture", "Capture a pokemon", {}, async (): Promise<CallToolResult> => {
-  return {
-    content: [{ type: "text", text: `Great job, you've captured a new pokemon!` }],
-    isError: false,
-  };
-});
+server.tool(
+  "list-cocktails",
+  "Summarize the curated cocktails that the widget knows about.",
+  {},
+  async (): Promise<CallToolResult> => {
+    const summaries = listCocktails();
+    const lines = summaries.map((cocktail) => `• ${cocktail.name} — ${cocktail.tagline}`);
+
+    return {
+      content: [
+        {
+          type: "text",
+          text: `Currently curated cocktails:\n${lines.join("\n")}`,
+        },
+      ],
+      isError: false,
+    };
+  },
+);
 
 export default server;
