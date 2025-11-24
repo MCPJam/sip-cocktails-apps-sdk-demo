@@ -14,11 +14,11 @@ const server = new McpServer(
 server.widget(
   "cocktail",
   {
-    description: "Curated SIP cocktail card with ingredients, tasting notes, and prep instructions.",
+    description: "Get the cocktail with a specific name. Call this tool once.",
   },
   {
     description:
-      "Use this tool to fetch the authoritative SIP recipe card for a cocktail such as Margarita or Old Fashioned. Always call it before answering cocktail questions so the widget can render ingredient measurements.",
+      "Get the cocktail by specific name. Call this tool once. This will render the cocktail widget.",
     inputSchema: {
       name: z
         .string()
@@ -60,7 +60,7 @@ server.widget(
 
 server.tool(
   "list-cocktails",
-  "Summarize the curated cocktails that the widget knows about.",
+  "Summarize the curated cocktails that the widget knows about. Call this tool once.",
   {},
   async (): Promise<CallToolResult> => {
     const summaries = listCocktails();
