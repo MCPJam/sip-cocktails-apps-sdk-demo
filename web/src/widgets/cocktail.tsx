@@ -1,13 +1,10 @@
-import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/shadcn-io/spinner";
 import "@/index.css";
 import { cn, useWidgetState } from "@/utils";
 import {
   BookmarkIcon,
-  ExternalLinkIcon,
   Maximize2Icon,
   Minimize2Icon,
-  PenLineIcon,
   StarIcon,
 } from "lucide-react";
 import { useCallback, useEffect } from "react";
@@ -277,7 +274,7 @@ function CocktailWidget() {
     }
   }, [setWidgetState]);
 
-  const { callTool, isPending } = useCallTool<{ name?: string }, CallToolResponse & { structuredContent: CocktailToolData }>(
+  const { isPending } = useCallTool<{ name?: string }, CallToolResponse & { structuredContent: CocktailToolData }>(
     "cocktail",
   );
 
